@@ -1,4 +1,4 @@
-// RecipeJS - Part 3: Expandable Cards with Recursive Steps and IIFE Structure
+// RecipeJS - Part 4: Real-Time Search, Favorites, and Advanced Features
 // Uses pure functions, higher-order functions, recursion, and IIFE module pattern
 
 // IIFE Module: Encapsulates all RecipeJS functionality
@@ -191,7 +191,68 @@ const RecipeApp = (() => {
   const appState = {
     currentFilter: 'all',
     currentSort: 'none',
-    expandedCards: new Set() // Track which cards are expanded
+    expandedCards: new Set(), // Track which cards are expanded
+    searchTerm: '',
+    favorites: new Set() // Track favorite recipe IDs
+  };
+
+  // ============================================================
+  // PRIVATE: LOCALSTORAGE UTILITIES
+  // ============================================================
+  const saveFavoritesToStorage = () => {
+    const favoritesArray = [...appState.favorites];
+    localStorage.setItem('recipejs_favorites', JSON.stringify(favoritesArray));
+  };
+
+  const loadFavoritesFromStorage = () => {
+    const stored = localStorage.getItem('recipejs_favorites');
+    if (stored) {
+      try {
+        const favoritesArray = JSON.parse(stored);
+        appState.favorites = new Set(favoritesArray);
+      } catch (e) {
+        console.warn('Failed to parse favorites from storage:', e);
+        appState.favorites = new Set();
+      }
+    }
+  };
+
+  // ============================================================
+  // PRIVATE: UTILITY FUNCTIONS
+  // ============================================================
+  // Debounce function for search input
+  const debounce = (func, delay = 300) => {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  // Check if recipe matches search term (by title or ingredients)
+  const matchesSearchTerm = (recipe, searchTerm) => {
+    if (!searchTerm.trim()) return true;
+    
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const titleMatches = recipe.title.toLowerCase().includes(lowerSearchTerm);
+    const ingredientMatches = recipe.ingredients.some(ingredient =>
+      ingredient.toLowerCase().includes(lowerSearchTerm)
+    );
+    
+    return titleMatches || ingredientMatches;
+  };
+
+  // Check if recipe is favorited
+  const isFavorited = (recipeId) => appState.favorites.has(recipeId);
+
+  // Toggle favorite status
+  const toggleFavorite = (recipeId) => {
+    if (appState.favorites.has(recipeId)) {
+      appState.favorites.delete(recipeId);
+    } else {
+      appState.favorites.add(recipeId);
+    }
+    saveFavoritesToStorage();
   };
 
   // ============================================================
@@ -203,6 +264,12 @@ const RecipeApp = (() => {
   const filterByQuick = (recipe) =>
     recipe.time < 30;
 
+  const filterByFavorites = (recipe) =>
+    isFavorited(recipe.id);
+
+  const filterBySearch = (searchTerm) => (recipe) =>
+    matchesSearchTerm(recipe, searchTerm);
+
   const createFilterPredicate = (filterType) => {
     switch (filterType) {
       case 'easy':
@@ -213,14 +280,19 @@ const RecipeApp = (() => {
         return filterByDifficulty('hard');
       case 'quick':
         return filterByQuick;
+      case 'favorites':
+        return filterByFavorites;
       case 'all':
       default:
         return () => true;
     }
   };
 
-  const applyFilter = (recipesList, filterType) =>
-    recipesList.filter(createFilterPredicate(filterType));
+  const applyFilter = (recipesList, filterType, searchTerm) => {
+    const filterPredicate = createFilterPredicate(filterType);
+    const searchPredicate = filterBySearch(searchTerm);
+    return recipesList.filter(recipe => filterPredicate(recipe) && searchPredicate(recipe));
+  };
 
   // ============================================================
   // PRIVATE: PURE SORT FUNCTIONS
@@ -287,11 +359,18 @@ const RecipeApp = (() => {
   const createRecipeCard = (recipe) => {
     const isExpanded = appState.expandedCards.has(recipe.id);
     const expandedClass = isExpanded ? 'expanded' : '';
+    const isFav = isFavorited(recipe.id);
+    const favoriteClass = isFav ? 'favorited' : '';
 
     return `
       <div class="recipe-card ${expandedClass}" data-id="${recipe.id}">
         <div class="recipe-card-header">
-          <h3>${recipe.title}</h3>
+          <div class="recipe-title-container">
+            <h3>${recipe.title}</h3>
+            <button class="favorite-btn ${favoriteClass}" data-recipe-id="${recipe.id}" data-action="toggle-favorite" aria-label="Toggle favorite">
+              ${isFav ? '❤️' : '🤍'}
+            </button>
+          </div>
           <div class="recipe-meta">
             <span>⏱️ ${recipe.time} min</span>
             <span class="difficulty ${recipe.difficulty}">${recipe.difficulty}</span>
@@ -329,8 +408,8 @@ const RecipeApp = (() => {
     `;
   };
 
-  const getFilteredAndSortedRecipes = (recipesList, filterType, sortType) => {
-    const filtered = applyFilter(recipesList, filterType);
+  const getFilteredAndSortedRecipes = (recipesList, filterType, sortType, searchTerm) => {
+    const filtered = applyFilter(recipesList, filterType, searchTerm);
     const sorted = applySort(filtered, sortType);
     return sorted;
   };
@@ -338,13 +417,22 @@ const RecipeApp = (() => {
   const renderRecipes = (list) => {
     const html = list.map(createRecipeCard).join('');
     recipeContainer.innerHTML = html;
+    updateRecipeCounter(list.length);
+  };
+
+  const updateRecipeCounter = (displayedCount) => {
+    const counterEl = document.querySelector('#recipe-counter');
+    if (counterEl) {
+      counterEl.textContent = `Showing ${displayedCount} of ${recipes.length} recipes`;
+    }
   };
 
   const updateDisplay = () => {
     const filtered = getFilteredAndSortedRecipes(
       recipes,
       appState.currentFilter,
-      appState.currentSort
+      appState.currentSort,
+      appState.searchTerm
     );
     renderRecipes(filtered);
   };
@@ -386,10 +474,19 @@ const RecipeApp = (() => {
     document.querySelector('[data-sort="none"]').classList.add('active');
   };
 
-  // Event delegation for card expand/collapse buttons
+  // Event delegation for card expand/collapse buttons and favorite button
   const setupCardEventDelegation = () => {
     recipeContainer.addEventListener('click', (event) => {
       const btn = event.target.closest('.action-btn');
+      const favBtn = event.target.closest('.favorite-btn');
+
+      if (favBtn) {
+        const recipeId = parseInt(favBtn.dataset.recipeId, 10);
+        toggleFavorite(recipeId);
+        updateDisplay();
+        return;
+      }
+
       if (!btn) return;
 
       const recipeId = parseInt(btn.dataset.recipeId, 10);
@@ -407,14 +504,29 @@ const RecipeApp = (() => {
     });
   };
 
+  // Setup search input with debouncing
+  const setupSearchInput = () => {
+    const searchInput = document.querySelector('#search-input');
+    if (!searchInput) return;
+
+    const handleSearch = debounce((event) => {
+      appState.searchTerm = event.target.value;
+      updateDisplay();
+    }, 300);
+
+    searchInput.addEventListener('input', handleSearch);
+  };
+
   // ============================================================
   // PUBLIC API (Exposed methods)
   // ============================================================
   return {
     init() {
+      loadFavoritesFromStorage();
       setupFilterButtons();
       setupSortButtons();
       setupCardEventDelegation();
+      setupSearchInput();
       updateDisplay();
     },
     // Export for testing (optional)
@@ -422,6 +534,8 @@ const RecipeApp = (() => {
     getAppState: () => appState,
     filterByDifficulty,
     filterByQuick,
+    filterByFavorites,
+    filterBySearch,
     createFilterPredicate,
     applyFilter,
     sortByName,
@@ -432,7 +546,11 @@ const RecipeApp = (() => {
     renderStepsRecursively,
     createRecipeCard,
     renderRecipes,
-    updateDisplay
+    updateDisplay,
+    toggleFavorite,
+    isFavorited,
+    matchesSearchTerm,
+    debounce
   };
 })();
 

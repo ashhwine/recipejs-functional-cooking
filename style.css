@@ -37,6 +37,48 @@ main {
     padding: 0 1rem;
 }
 
+/* Search Section */
+.search-section {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.search-bar {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #f9f9f9;
+    color: #22294a;
+    transition: all 200ms ease;
+}
+
+.search-bar:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.search-bar::placeholder {
+    color: #999;
+}
+
+.recipe-counter {
+    font-size: 0.95rem;
+    color: #667eea;
+    font-weight: 600;
+    text-align: center;
+}
+
 /* Controls Section */
 .controls-section {
     background: #ffffff;
@@ -141,6 +183,51 @@ main {
     color: #4b5563;
     font-size: 0.95rem;
     margin-bottom: 1rem;
+}
+
+/* Recipe Title Container with Favorite Button */
+.recipe-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.recipe-title-container h3 {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    min-width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 200ms ease;
+    flex-shrink: 0;
+}
+
+.favorite-btn:hover {
+    background: #f0f4ff;
+    transform: scale(1.1);
+}
+
+.favorite-btn.favorited {
+    animation: heartPulse 200ms ease;
+}
+
+@keyframes heartPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
 
 .recipe-meta {
@@ -308,6 +395,30 @@ main {
 }
 
 /* Responsive design for action buttons */
+@media (max-width: 768px) {
+    .search-section {
+        padding: 1.25rem;
+    }
+
+    .controls-section {
+        padding: 1.5rem;
+    }
+
+    .button-group {
+        gap: 0.5rem;
+    }
+
+    .filter-btn,
+    .sort-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .recipe-title-container {
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 640px) {
     .recipe-card-actions {
         flex-direction: column;
@@ -328,9 +439,32 @@ main {
     .substeps-list {
         padding-left: 1rem;
     }
-}
 
-@media (max-width: 640px) {
-    .recipe-card { width: 100%; }
+    .search-section {
+        flex-direction: column;
+    }
+
+    .search-bar {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .recipe-counter {
+        font-size: 0.9rem;
+    }
+
+    .recipe-card { 
+        width: 100%; 
+    }
+
+    .recipe-title-container {
+        flex-direction: row;
+    }
+
+    .favorite-btn {
+        font-size: 1.25rem;
+        min-width: 1.75rem;
+        height: 1.75rem;
+    }
 }
 
