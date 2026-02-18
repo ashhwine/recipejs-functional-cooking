@@ -37,6 +37,79 @@ main {
     padding: 0 1rem;
 }
 
+/* Controls Section */
+.controls-section {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.controls-group {
+    margin-bottom: 1.5rem;
+}
+
+.controls-group:last-child {
+    margin-bottom: 0;
+}
+
+.controls-group h2 {
+    font-size: 1.1rem;
+    color: #22294a;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.filter-btn,
+.sort-btn {
+    padding: 0.625rem 1.25rem;
+    border: 2px solid #e0e0e0;
+    background: #ffffff;
+    color: #22294a;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.filter-btn:hover,
+.sort-btn:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.filter-btn.active,
+.sort-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+    .controls-section {
+        padding: 1.5rem;
+    }
+
+    .button-group {
+        gap: 0.5rem;
+    }
+
+    .filter-btn,
+    .sort-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
 #recipe-container {
     display: flex;
     flex-wrap: wrap;
